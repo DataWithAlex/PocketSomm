@@ -6,6 +6,16 @@ import requests
 from PIL import Image
 import json
 
+# Hide the made from Streamlit:
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
+
 # Firebase Constants
 FIREBASE_WEB_API_KEY = 'AIzaSyDUW2pzxpjNKe7mrda8zm3wj_hZMxoDdzI'
 
@@ -161,3 +171,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    
