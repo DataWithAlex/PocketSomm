@@ -42,7 +42,7 @@ msgpack==1.0.5
 numpy==1.25.2
 packaging==23.1
 pandas==2.0.3
-Pillow==10.0.0
+Pillow>=7.1.0,<10
 proto-plus==1.22.3
 protobuf==4.24.2
 pyarrow==13.0.0
