@@ -3,29 +3,26 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import io
 from PIL import Image
-from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials, auth
 import json
-import toml
-
-# Load environment variables from .env file
-#load_dotenv()
-
-# Load Firebase credentials from JSON file
-#firebase_key_path = "firebase_key.json"
-#with open(firebase_key_path, 'r') as f:
-#    firebase_credentials = json.load(f)
 
 # Load Firebase credentials from TOML file
-firebase_credentials = st.secrets["textkey"]
+firebase_credentials_string = st.secrets["textkey"]
+firebase_credentials_dict = json.loads(firebase_credentials_string)
 
 # Firebase Admin Authentication
-cred = credentials.Certificate(firebase_credentials)
+cred = credentials.Certificate(firebase_credentials_dict)
 
 # Check if the default app already exists, if not initialize it
 if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
+
+if firebase_admin._apps:
+    st.write("Firebase app has been initialized.")
+else:
+    st.write("Firebase app initialization failed.")
+
 
 
 def login():
