@@ -2,44 +2,51 @@ import os
 import streamlit as st
 import matplotlib.pyplot as plt
 import io
+import requests
 from PIL import Image
-import firebase_admin
-from firebase_admin import credentials, auth
 import json
 
-# Load Firebase credentials from TOML file
+# Firebase Constants
+FIREBASE_WEB_API_KEY = 'AIzaSyDUW2pzxpjNKe7mrda8zm3wj_hZMxoDdzI'
+
+# Load Firebase credentials from TOML file for signup
 firebase_credentials_string = st.secrets["textkey"]
 firebase_credentials_dict = json.loads(firebase_credentials_string)
 
-# Firebase Admin Authentication
-cred = credentials.Certificate(firebase_credentials_dict)
+def login_with_firebase(email, password):
+    SIGNIN_ENDPOINT = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_WEB_API_KEY}"
+    data = {
+        "email": email,
+        "password": password,
+        "returnSecureToken": True
+    }
+    response = requests.post(SIGNIN_ENDPOINT, data=data)
+    return response.json()
 
-# Check if the default app already exists, if not initialize it
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
-
-if firebase_admin._apps:
-    st.write("Firebase app has been initialized.")
-else:
-    st.write("Firebase app initialization failed.")
-
-
+def signup_with_firebase(email, password):
+    SIGNUP_ENDPOINT = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_WEB_API_KEY}"
+    data = {
+        "email": email,
+        "password": password,
+        "returnSecureToken": True
+    }
+    response = requests.post(SIGNUP_ENDPOINT, data=data)
+    return response.json()
 
 def login():
     st.sidebar.title("User Authentication")
-    
     menu = ["Login", "Signup"]
-    choice = st.sidebar.selectbox("Menu", menu, key="selected_login")
+    choice = st.sidebar.selectbox("Menu", menu)
     
     if choice == "Login":
         email = st.sidebar.text_input("Email")
         password = st.sidebar.text_input("Password", type='password')
         if st.sidebar.button("Login"):
-            try:
-                user = auth.sign_in_with_email_and_password(email, password)
+            firebase_response = login_with_firebase(email, password)
+            if "idToken" in firebase_response:
                 st.sidebar.success("Logged in as: {}".format(email))
-                return user
-            except:
+                return firebase_response
+            else:
                 st.sidebar.error("Invalid email/password")
         return None
 
@@ -51,13 +58,12 @@ def login():
         
         if st.button("Signup"):
             if new_user_password == confirm_password:
-                try:
-                    auth.create_user_with_email_and_password(new_user_email, new_user_password)
+                firebase_response = signup_with_firebase(new_user_email, new_user_password)
+                if "idToken" in firebase_response:
                     st.success("Account created successfully!")
-                    user = auth.sign_in_with_email_and_password(new_user_email, new_user_password)
                     st.sidebar.success("Logged in as: {}".format(new_user_email))
-                    return user
-                except:
+                    return firebase_response
+                else:
                     st.error("Error creating account")
             else:
                 st.error("Passwords do not match")
