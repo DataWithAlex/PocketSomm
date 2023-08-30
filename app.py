@@ -1,27 +1,28 @@
+import os
 import streamlit as st
 import matplotlib.pyplot as plt
 import io
 from PIL import Image
-import pyrebase
+from dotenv import load_dotenv
+import firebase_admin
+from firebase_admin import credentials, auth
+import json
 
+# Load environment variables from .env file
+load_dotenv()
 
-### Firebase Authentication: 
+# Load Firebase credentials from JSON file
+firebase_key_path = "firebase_key.json"
+with open(firebase_key_path, 'r') as f:
+    firebase_credentials = json.load(f)
 
+# Firebase Admin Authentication
+cred = credentials.Certificate(firebase_credentials)
 
+# Check if the default app already exists, if not initialize it
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
 
-firebase_config = {
-    "apiKey": "AIzaSyDUW2pzxpjNKe7mrda8zm3wj_hZMxoDdzI",
-    "authDomain": "pocketsomm-15bd1.firebaseapp.com",
-    "databaseURL": "https://pocketsomm-15bd1.firebaseio.com",
-    "projectId": "pocketsomm-15bd1",
-    "storageBucket": "pocketsomm-15bd1.appspot.com",
-    "messagingSenderId": "67664070012",
-    "appId": "1:67664070012:web:59593f2b095773d58910f9",
-    "measurementId": "G-XNJHXDNLK9"
-}
-
-firebase = pyrebase.initialize_app(firebase_config)
-auth = firebase.auth()
 
 def login():
     st.sidebar.title("User Authentication")
@@ -94,23 +95,16 @@ def create_infographic(selected_wine, appearance, clarity, intensity, selected_a
     return buf
 
 
-######
-
-
 def main():
     # Initialize the state
     user = login()
     if user:
         st.title(f"Welcome!")
 
-    firebase = pyrebase.initialize_app(firebase_config)
-    auth = firebase.auth()
-
     if 'start_tasting' not in st.session_state:
         st.session_state.start_tasting = False
     
     st.title("PocketSomm")
-    # st.image('images/logo.jpg', use_column_width=True, width=10)
     st.write("Welcome to our wine tasting experience. Let's explore the world of wines!")
     
     # Start tasting button
@@ -119,17 +113,16 @@ def main():
 
     if st.session_state.start_tasting:
         wine_options = ["Red", "White", "Rosé", "Sparkling"]
-        selected_wine = st.selectbox("Choose a type of wine:", wine_options, key = "wine_options_key")
+        selected_wine = st.selectbox("Choose a type of wine:", wine_options, key="wine_options_key")
 
         # Visual Examination
         st.subheader("Look")
         appearance = st.text_input("Describe the wine's appearance:")
-        #clarity = st.radio("Select the clarity:", ["Clear", "Cloudy", "Opaque"])
+        clarity = st.radio("Select the clarity:", ["Clear", "Cloudy", "Opaque"])
         intensity_options = ["Pale", "Medium", "Deep"]
-        intensity = st.selectbox("Intensity:", intensity_options, key = "intensity_options_key") # Wine Folly
-
+        intensity = st.selectbox("Intensity:", intensity_options, key="intensity_options_key") 
         hue_options = ["Purple", "Ruby", "Garnet", "Tawny", "Brown", "Straw", "Yellow", "Gold", "Amber", "Brown", "Pink", "Salmon", "Copper"]
-        hue = st.selectbox("Choose the Hue of the Wine:", hue_options, key = "hue_options_key")
+        hue = st.selectbox("Choose the Hue of the Wine:", hue_options, key="hue_options_key")
 
         # Olfactory Examination
         st.subheader("Olfactory Profile")
@@ -146,17 +139,12 @@ def main():
         overall_impressions = st.text_area("Share your overall impressions of the wine:")
         rating = st.slider("Rate the wine (out of 5):", 0, 5)
 
-        # Once all inputs are given, provide an option to submit or save the tasting session
-            # In the section after the user submits their tasting:
-        # ... [Rest of your code]
-
-# In the section after the user submits their tasting:
         if st.button("Submit Tasting"):
             st.write("Thank you for your tasting notes!")
     
         buf = create_infographic(selected_wine, appearance, clarity, intensity, selected_aromas, taste_intensity, overall_impressions, rating)
     
-    # Convert buffer to PIL Image for display
+        # Convert buffer to PIL Image for display
         image = Image.open(buf)
         st.image(image, caption="Your Wine Tasting Infographic", use_column_width=True)
     
@@ -164,10 +152,5 @@ def main():
         st.download_button(label="Download Infographic", data=buf, file_name="wine_tasting_infographic.jpeg", mime="image/jpeg")
 
 
-###########
-
-
-
 if __name__ == "__main__":
     main()
-
