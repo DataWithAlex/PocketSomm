@@ -1,6 +1,11 @@
 import toml
+import os
 
-output_file = "secrets.toml"
+# Define output file path
+output_file = ".streamlit/secrets.toml"
+
+# Ensure .streamlit directory exists
+os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
 with open("firebase_key.json") as json_file:
     json_text = json_file.read()
