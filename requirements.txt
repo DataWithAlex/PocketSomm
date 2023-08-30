@@ -3,18 +3,17 @@ attrs==23.1.0
 blinker==1.6.2
 cachetools==5.3.1
 certifi==2023.7.22
-charset-normalizer==3.2.0
+chardet==3.0.4
 click==8.1.7
 contourpy==1.1.0
 cycler==0.11.0
-firebase==4.0.1
 fonttools==4.42.1
 gcloud==0.17.0
 gitdb==4.0.10
 GitPython==3.1.32
 googleapis-common-protos==1.60.0
 httplib2==0.22.0
-idna==3.4
+idna==2.10
 importlib-metadata==6.8.0
 importlib-resources==6.0.1
 Jinja2==3.1.2
@@ -30,7 +29,7 @@ numpy==1.25.2
 oauth2client==3.0.0
 packaging==23.1
 pandas==2.0.3
-Pillow==9.5.0
+Pillow==10.0.0
 protobuf==4.24.2
 pyarrow==13.0.0
 pyasn1==0.5.0
@@ -46,7 +45,7 @@ python-jwt==2.0.1
 pytz==2023.3
 pytz-deprecation-shim==0.1.0.post0
 referencing==0.30.2
-requests==2.11.1
+requests==2.23.0
 requests-toolbelt==0.7.0
 rich==13.5.2
 rpds-py==0.10.0
@@ -61,6 +60,6 @@ tornado==6.3.3
 typing-extensions==4.7.1
 tzdata==2023.3
 tzlocal==4.3.1
-urllib3==2.0.4
+urllib3==1.25.11
 validators==0.21.2
 zipp==3.16.2
