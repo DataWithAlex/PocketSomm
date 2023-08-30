@@ -46,7 +46,7 @@ python-jwt==2.0.1
 pytz==2023.3
 pytz-deprecation-shim==0.1.0.post0
 referencing==0.30.2
-requests==2.11.1
+requests
 requests-toolbelt==0.7.0
 rich==13.5.2
 rpds-py==0.10.0

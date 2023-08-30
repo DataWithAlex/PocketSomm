@@ -2,11 +2,12 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import io
 from PIL import Image
+import pyrebase
 
 
 ### Firebase Authentication: 
 
-import pyrebase
+
 
 firebase_config = {
     "apiKey": "AIzaSyDUW2pzxpjNKe7mrda8zm3wj_hZMxoDdzI",
