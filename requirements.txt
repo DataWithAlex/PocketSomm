@@ -42,7 +42,7 @@ msgpack==1.0.5
 numpy==1.25.2
 packaging==23.1
 pandas==2.0.3
-Pillow>=7.1.0,<10.0.0
+Pillow==10.0.0
 proto-plus==1.22.3
 protobuf==4.24.2
 pyarrow==13.0.0
@@ -74,6 +74,6 @@ typing-extensions==4.7.1
 tzdata==2023.3
 tzlocal==4.3.1
 uritemplate==4.1.1
-urllib3<2.0
+urllib3==2.0.4
 validators==0.21.2
 zipp==3.16.2

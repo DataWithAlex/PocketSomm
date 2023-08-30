@@ -7,14 +7,20 @@ from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials, auth
 import json
+import toml
 
 # Load environment variables from .env file
-load_dotenv()
+#load_dotenv()
 
 # Load Firebase credentials from JSON file
-firebase_key_path = "firebase_key.json"
+#firebase_key_path = "firebase_key.json"
+#with open(firebase_key_path, 'r') as f:
+#    firebase_credentials = json.load(f)
+
+# Load Firebase credentials from TOML file
+firebase_key_path = "firebase_key.toml"
 with open(firebase_key_path, 'r') as f:
-    firebase_credentials = json.load(f)
+    firebase_credentials = toml.load(f)
 
 # Firebase Admin Authentication
 cred = credentials.Certificate(firebase_credentials)
