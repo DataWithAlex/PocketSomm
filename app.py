@@ -5,13 +5,14 @@ import io
 import requests
 from PIL import Image
 import json
+from firebase_admin import credentials, firestore, initialize_app
+import firebase_admin
 
 # Hide the made from Streamlit:
 hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
-            .viewerBadge_link__qRIco {display: none;}
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
@@ -24,6 +25,16 @@ FIREBASE_WEB_API_KEY = 'AIzaSyDUW2pzxpjNKe7mrda8zm3wj_hZMxoDdzI'
 firebase_credentials_string = st.secrets["textkey"]
 firebase_credentials_dict = json.loads(firebase_credentials_string)
 
+cred = credentials.Certificate(firebase_credentials_dict)
+
+# Check if the app is already initialized
+try:
+    firebase_admin.get_app()
+except ValueError as e:
+    initialize_app(cred)
+
+db = firestore.client()
+
 def login_with_firebase(email, password):
     SIGNIN_ENDPOINT = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_WEB_API_KEY}"
     data = {
@@ -34,7 +45,7 @@ def login_with_firebase(email, password):
     response = requests.post(SIGNIN_ENDPOINT, data=data)
     return response.json()
 
-def signup_with_firebase(email, password):
+def signup_with_firebase(email, password, personal_data):
     SIGNUP_ENDPOINT = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_WEB_API_KEY}"
     data = {
         "email": email,
@@ -42,23 +53,68 @@ def signup_with_firebase(email, password):
         "returnSecureToken": True
     }
     response = requests.post(SIGNUP_ENDPOINT, data=data)
-    return response.json()
+    response_data = response.json()
+
+    # Print the response data for debugging purposes
+    st.write(response_data)  # Using Streamlit's st.write to display the response data
+
+
+    # If signup was successful, store the personal information in Firestore
+    if "localId" in response_data:
+        users_ref = db.collection('users')
+        users_ref.document(response_data["localId"]).set(personal_data)
+
+def get_user_data(uid):
+    users_ref = db.collection('users')
+    doc = users_ref.document(uid).get()
+    if doc.exists:
+        return doc.to_dict()
+    else:
+        return None
+
+def wine_preference_survey(uid=None):
+    st.subheader("Wine Preference Survey")
+    red_wine_preference = st.slider("Rate your preference for Red Wine (0=Dislike, 10=Love)", 0, 10)
+    white_wine_preference = st.slider("Rate your preference for White Wine", 0, 10)
+    rose_wine_preference = st.slider("Rate your preference for Rosé", 0, 10)
+    sparkling_wine_preference = st.slider("Rate your preference for Sparkling Wine", 0, 10)
+    # Add more questions as needed...
+    return {
+        "red_wine": red_wine_preference,
+        "white_wine": white_wine_preference,
+        "rose_wine": rose_wine_preference,
+        "sparkling_wine": sparkling_wine_preference
+    }
+
+def display_preferences(user_data):
+    st.title("My Preferences")
+    st.write("Here are your wine preferences:")
+    st.write(f"Red Wine: {user_data['red_wine']}/10")
+    st.write(f"White Wine: {user_data['white_wine']}/10")
+    st.write(f"Rosé: {user_data['rose_wine']}/10")
+    st.write(f"Sparkling Wine: {user_data['sparkling_wine']}/10")
 
 def login():
-    st.sidebar.title("User Authentication")
+
+    st.title("User Authentication")
     menu = ["Login", "Signup"]
-    choice = st.sidebar.selectbox("Menu", menu)
-    
+    choice = st.selectbox("Menu", menu, key="menu_key")
+
     if choice == "Login":
-        email = st.sidebar.text_input("Email")
-        password = st.sidebar.text_input("Password", type='password')
-        if st.sidebar.button("Login"):
-            firebase_response = login_with_firebase(email, password)
+        email = st.text_input("Email")
+        password = st.text_input("Password", type='password')
+        if st.button("Login"):
+            firebase_response = login_with_firebase(email, password) or {}
+            
             if "idToken" in firebase_response:
-                st.sidebar.success("Logged in as: {}".format(email))
-                return firebase_response
+                user_data = get_user_data(firebase_response["localId"])
+                if user_data:
+                    st.write(f"Welcome, {user_data['first_name']}!")
+                    return firebase_response
+                else:
+                    st.error("Error retrieving user data")
             else:
-                st.sidebar.error("Invalid email/password")
+                st.error("Invalid email/password")
         return None
 
     elif choice == "Signup":
@@ -66,18 +122,30 @@ def login():
         new_user_email = st.text_input("Email")
         new_user_password = st.text_input("Password", type='password')
         confirm_password = st.text_input("Confirm password", type='password')
-        
+
+        # Collect additional personal information
+        first_name = st.text_input("First Name")
+        last_name = st.text_input("Last Name")
+        phone_number = st.text_input("Phone Number")
+
         if st.button("Signup"):
             if new_user_password == confirm_password:
-                firebase_response = signup_with_firebase(new_user_email, new_user_password)
+                personal_data = {
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "phone_number": phone_number,
+                    "email": new_user_email
+                }
+                firebase_response = signup_with_firebase(new_user_email, new_user_password, personal_data) or {}
                 if "idToken" in firebase_response:
                     st.success("Account created successfully!")
-                    st.sidebar.success("Logged in as: {}".format(new_user_email))
+                    st.write(f"Welcome, {first_name}!")
                     return firebase_response
                 else:
                     st.error("Error creating account")
             else:
                 st.error("Passwords do not match")
+
 
 
 def create_infographic(selected_wine, appearance, clarity, intensity, selected_aromas, taste_intensity, overall_impressions, rating):
@@ -113,25 +181,75 @@ def create_infographic(selected_wine, appearance, clarity, intensity, selected_a
     return buf
 
 
+#### TO FIX BUG WHERE SELECTING SIGN IN HIDES EVERYTHING:
+def save_wine_preferences(uid, preferences):
+    """Save wine preferences to Firestore."""
+    users_ref = db.collection('users')
+    users_ref.document(uid).update(preferences)
+
+def wine_preference_survey(uid):
+    st.subheader("Wine Preference Survey")
+    red_wine_preference = st.slider("Rate your preference for Red Wine (0=Dislike, 10=Love)", 0, 10)
+    white_wine_preference = st.slider("Rate your preference for White Wine", 0, 10)
+    rose_wine_preference = st.slider("Rate your preference for Rosé", 0, 10)
+    sparkling_wine_preference = st.slider("Rate your preference for Sparkling Wine", 0, 10)
+    
+    preferences = {
+        "red_wine": red_wine_preference,
+        "white_wine": white_wine_preference,
+        "rose_wine": rose_wine_preference,
+        "sparkling_wine": sparkling_wine_preference
+    }
+    
+    if st.button("Submit Preferences"):
+        save_wine_preferences(uid, preferences)
+        st.success("Preferences saved successfully!")
+        return True  # Preferences were successfully saved
+
+    return False  # Preferences were not saved yet
+
+
+
 def main():
-    # Initialize the state
-    user = login()
+    st.title("PocketSomm")
+    st.write("PocketSomm gathers your wine preferences and helps recommend wines based on your preferences and other wines you like.")
+
+    user = None  # Initialize user to None
+    if 'user' not in st.session_state or not st.session_state.user:
+        user = login()
+        if user:
+            st.session_state.user = user
+    else:
+        user = st.session_state.user
+
+    # Add this check to ensure user is not None
     if user:
-        st.title(f"Welcome!")
+        user_data = get_user_data(user["localId"])
+        
+        # Check if wine preferences are already saved
+        if user_data and 'red_wine' in user_data:
+            display_preferences(user_data)
+        else:
+            # If not, display the survey and save the preferences
+            wine_preference_survey(user["localId"])
 
     if 'start_tasting' not in st.session_state:
         st.session_state.start_tasting = False
-    
-    st.title("PocketSomm")
-    st.write("Welcome to our wine tasting experience. Let's explore the world of wines!")
-    
-    # Start tasting button
-    if st.button("Start Tasting"):
-        st.session_state.start_tasting = True
 
-    if st.session_state.start_tasting:
-        wine_options = ["Red", "White", "Rosé", "Sparkling"]
-        selected_wine = st.selectbox("Choose a type of wine:", wine_options, key="wine_options_key")
+    if st.button("Start Tasting"):
+        start_tasting()
+
+
+
+
+
+    
+
+def start_tasting():
+
+        if st.session_state.start_tasting:
+            wine_options = ["Red", "White", "Rosé", "Sparkling"]
+            selected_wine = st.selectbox("Choose a type of wine:", wine_options, key="wine_options_key")
 
         # Visual Examination
         st.subheader("Look")
