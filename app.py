@@ -18,7 +18,7 @@ import toml
 #    firebase_credentials = json.load(f)
 
 # Load Firebase credentials from TOML file
-firebase_credentials = st.secrets["firebase"]
+firebase_credentials = st.secrets["textkey"]
 
 # Firebase Admin Authentication
 cred = credentials.Certificate(firebase_credentials)

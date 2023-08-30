@@ -1,4 +1,5 @@
 venv/
 .env
 firebase_key.json
+secrets.toml
 
