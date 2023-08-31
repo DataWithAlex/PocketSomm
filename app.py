@@ -229,7 +229,7 @@ def main():
 
     # Display image in the center column
     #col1.image(image, width=500)
-    st.image(image, width=700)  # Adjust width as per your need.
+    st.image(image)  # Adjust width as per your need.
 
     # Display the text in the second column
     st.write("PocketSomm gathers your wine preferences and helps recommend wines based on your preferences and other wines you like.")
