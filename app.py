@@ -232,7 +232,10 @@ def main():
     st.image(image)  # Adjust width as per your need.
 
     # Display the text in the second column
-    st.write("PocketSomm gathers your wine preferences and helps recommend wines based on your preferences and other wines you like.")
+    st.write("")
+    st.write("Do you like drinking wine but have a hard time figuring out your preferences? Pocket Somm is an app that identifies your preferences and recommends which Wines are best for your taste.")
+
+ 
 
     user = None  # Initialize user to None
     if 'user' not in st.session_state or not st.session_state.user:
