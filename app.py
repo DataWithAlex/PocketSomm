@@ -212,11 +212,16 @@ def wine_preference_survey(uid):
 
 def main():
 
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    IMAGE_PATH = os.path.join(BASE_DIR, 'images', 'logo.JPG')
+    
+
     # Create columns for image and text. Adjust the width ratio to bring image closer to text.
     col1, col2 = st.columns([1, 4])
 
     # Load the image
-    image = Image.open('images/logo.JPG')
+    #image = Image.open('images/logo.JPG')
+    image = Image.open(IMAGE_PATH)
 
     # Display the text in the second column
     col1.write("**PocketSomm**")
