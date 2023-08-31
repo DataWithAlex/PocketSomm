@@ -96,7 +96,7 @@ def display_preferences(user_data):
 
 def login():
 
-    st.title("User Authentication")
+    st.subheader("Sig-up/Login Sommeliers")
     menu = ["Login", "Signup"]
     choice = st.selectbox("Menu", menu, key="menu_key")
 
