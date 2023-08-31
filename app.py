@@ -211,8 +211,21 @@ def wine_preference_survey(uid):
 
 
 def main():
-    st.title("PocketSomm")
-    st.write("PocketSomm gathers your wine preferences and helps recommend wines based on your preferences and other wines you like.")
+
+    # Create columns for image and text. Adjust the width ratio to bring image closer to text.
+    col1, col2 = st.columns([1, 4])
+
+    # Load the image
+    image = Image.open('images/logo.JPG')
+
+    # Display the text in the second column
+    col1.write("**PocketSomm**")
+
+     # Display the image in the first column with a specific width
+    col1.image(image, width=90)  # Adjust width as per your need.
+
+    # Display the text in the second column
+    col2.write("PocketSomm gathers your wine preferences and helps recommend wines based on your preferences and other wines you like.")
 
     user = None  # Initialize user to None
     if 'user' not in st.session_state or not st.session_state.user:
