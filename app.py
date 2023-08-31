@@ -96,9 +96,9 @@ def display_preferences(user_data):
 
 def login():
 
-    st.subheader("Sig-up/Login Sommeliers")
+    st.subheader("Welcome Sommeliers!")
     menu = ["Login", "Signup"]
-    choice = st.selectbox("Menu", menu, key="menu_key")
+    choice = st.selectbox("Login/Signup", menu, key="menu_key")
 
     if choice == "Login":
         email = st.text_input("Email")
