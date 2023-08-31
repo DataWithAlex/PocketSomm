@@ -214,20 +214,25 @@ def main():
     
 
     # Create columns for image and text. Adjust the width ratio to bring image closer to text.
-    col1, col2 = st.columns([1, 4])
+    #col1, col2 = st.columns([1, 4])
 
     # Load the image
-    image = Image.open('logo.JPG')
+    image = Image.open('Pocket.png')
     # image = Image.open(IMAGE_PATH)
 
     # Display the text in the second column
-    col1.write("**PocketSomm**")
+    #col1.write("**PocketSomm**")
 
      # Display the image in the first column with a specific width
-    col1.image(image, width=90)  # Adjust width as per your need.
+     # Create three columns
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    # Display image in the center column
+    #col1.image(image, width=500)
+    st.image(image, width=700)  # Adjust width as per your need.
 
     # Display the text in the second column
-    col2.write("PocketSomm gathers your wine preferences and helps recommend wines based on your preferences and other wines you like.")
+    st.write("PocketSomm gathers your wine preferences and helps recommend wines based on your preferences and other wines you like.")
 
     user = None  # Initialize user to None
     if 'user' not in st.session_state or not st.session_state.user:
