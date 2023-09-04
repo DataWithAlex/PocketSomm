@@ -18,7 +18,7 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 st.markdown('<style>body { margin-top: 20px; }</style>', unsafe_allow_html=True)
 
-
+#### SECTION 1: FIREBASE SET-UP ####
 
 # Firebase Constants
 FIREBASE_WEB_API_KEY = 'AIzaSyDUW2pzxpjNKe7mrda8zm3wj_hZMxoDdzI'
@@ -57,9 +57,8 @@ def signup_with_firebase(email, password, personal_data):
     response = requests.post(SIGNUP_ENDPOINT, data=data)
     response_data = response.json()
 
-    # Print the response data for debugging purposes
-    st.write(response_data)  # Using Streamlit's st.write to display the response data
-
+    # DEBUGGING LINE: Print the response data for debugging purposes
+    # st.write(response_data)  # Using Streamlit's st.write to display the response data
 
     # If signup was successful, store the personal information in Firestore
     if "localId" in response_data:
@@ -73,6 +72,23 @@ def get_user_data(uid):
         return doc.to_dict()
     else:
         return None
+
+def update_user_profile(uid, user_data):
+    users_ref = db.collection('users')
+    users_ref.document(uid).update(user_data)
+
+def add_wine_tasting_record(uid, wine_data):
+    users_ref = db.collection('users')
+    user_document = users_ref.document(uid)
+    wine_records = user_document.collection('wine_records')
+    wine_records.add(wine_data)
+
+def get_wine_tasting_records(uid):
+    users_ref = db.collection('users')
+    user_document = users_ref.document(uid)
+    wine_records = user_document.collection('wine_records').stream()
+    return [record.to_dict() for record in wine_records]
+
 
 def wine_preference_survey(uid=None):
     st.subheader("Wine Preference Survey")
@@ -89,7 +105,7 @@ def wine_preference_survey(uid=None):
     }
 
 def display_preferences(user_data):
-    st.title("My Preferences")
+    st.subheader(":wine_glass: Your Preferences :grapes:")
     st.write("Here are your wine preferences:")
     st.write(f"Red Wine: {user_data['red_wine']}/10")
     st.write(f"White Wine: {user_data['white_wine']}/10")
@@ -111,7 +127,7 @@ def login():
             if "idToken" in firebase_response:
                 user_data = get_user_data(firebase_response["localId"])
                 if user_data:
-                    st.write(f"Welcome, {user_data['first_name']}!")
+                    st.title(f"Welcome, {user_data['first_name']}!")
                     return firebase_response
                 else:
                     st.error("Error retrieving user data")
@@ -210,34 +226,40 @@ def wine_preference_survey(uid):
 
     return False  # Preferences were not saved yet
 
+def profile_page(uid):
+    st.subheader("Profile Page")
 
+    user_data = get_user_data(uid)
+
+    st.markdown("## Personal Information")
+    first_name = st.text_input("First Name", value=user_data.get('first_name', ''))
+    last_name = st.text_input("Last Name", value=user_data.get('last_name', ''))
+    phone_number = st.text_input("Phone Number", value=user_data.get('phone_number', ''))
+
+    if st.button("Update Profile"):
+        updated_data = {
+            'first_name': first_name,
+            'last_name': last_name,
+            'phone_number': phone_number
+        }
+        update_user_profile(uid, updated_data)
+        st.success("Profile updated successfully!")
+
+    st.markdown("## Wine Tasting Records")
+    records = get_wine_tasting_records(uid)
+    for record in records:
+        st.write(f"Wine Type: {record['wine_type']}, Rating: {record['rating']}/5")
 
 def main():
-    
-
-    # Create columns for image and text. Adjust the width ratio to bring image closer to text.
-    #col1, col2 = st.columns([1, 4])
 
     # Load the image
     image = Image.open('Pocket.png')
-    # image = Image.open(IMAGE_PATH)
 
-    # Display the text in the second column
-    #col1.write("**PocketSomm**")
-
-     # Display the image in the first column with a specific width
-     # Create three columns
-    col1, col2, col3, col4, col5 = st.columns(5)
-
-    # Display image in the center column
-    #col1.image(image, width=500)
     st.image(image)  # Adjust width as per your need.
 
     # Display the text in the second column
     st.write("")
     st.write("Do you like drinking wine but have a hard time figuring out your preferences? Pocket Somm is an app that identifies your preferences and recommends which Wines are best for your taste.")
-
- 
 
     user = None  # Initialize user to None
     if 'user' not in st.session_state or not st.session_state.user:
@@ -258,17 +280,23 @@ def main():
             # If not, display the survey and save the preferences
             wine_preference_survey(user["localId"])
 
+    if user:
+        menu_options = ["Home", "Profile"]
+        selected_option = st.sidebar.selectbox("Choose an option", menu_options)
+
+        if selected_option == "Home":
+            # Your existing main page contents here
+            # (Basically everything that is currently in the main function, 
+            # minus the user check and the added sidebar selectbox)
+            pass
+        elif selected_option == "Profile":
+            profile_page(user["localId"])
+
     if 'start_tasting' not in st.session_state:
         st.session_state.start_tasting = False
 
     if st.button("Start Tasting"):
         start_tasting()
-
-
-
-
-
-    
 
 def start_tasting():
 
