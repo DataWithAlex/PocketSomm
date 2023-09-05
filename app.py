@@ -66,12 +66,12 @@ def signup_with_firebase(email, password, personal_data):
         users_ref.document(response_data["localId"]).set(personal_data)
 
 def get_user_data(uid):
-    users_ref = db.collection('users')
-    doc = users_ref.document(uid).get()
+    user_ref = db.collection('users').document(uid)
+    doc = user_ref.get()
     if doc.exists:
         return doc.to_dict()
     else:
-        return None
+        return {}  # Return an empty dictionary if no data is found
 
 def update_user_profile(uid, user_data):
     users_ref = db.collection('users')
@@ -103,6 +103,7 @@ def wine_preference_survey(uid=None):
         "rose_wine": rose_wine_preference,
         "sparkling_wine": sparkling_wine_preference
     }
+
 
 def display_preferences(user_data):
     st.subheader(":wine_glass: Your Preferences :grapes:")
@@ -251,17 +252,14 @@ def profile_page(uid):
         st.write(f"Wine Type: {record['wine_type']}, Rating: {record['rating']}/5")
 
 def main():
-
     # Load the image
     image = Image.open('Pocket.png')
+    st.image(image)
 
-    st.image(image)  # Adjust width as per your need.
-
-    # Display the text in the second column
-    st.write("")
+    # Display the text
     st.write("Do you like drinking wine but have a hard time figuring out your preferences? Pocket Somm is an app that identifies your preferences and recommends which Wines are best for your taste.")
 
-    user = None  # Initialize user to None
+    user = None
     if 'user' not in st.session_state or not st.session_state.user:
         user = login()
         if user:
@@ -269,77 +267,90 @@ def main():
     else:
         user = st.session_state.user
 
-    # Add this check to ensure user is not None
+    # Check if the user is logged in
     if user:
-        user_data = get_user_data(user["localId"])
-        
-        # Check if wine preferences are already saved
-        if user_data and 'red_wine' in user_data:
-            display_preferences(user_data)
+        # User navigation options
+        page_choices = ["Home", "Profile"]
+        if "page" not in st.session_state:
+            st.session_state.page = st.sidebar.selectbox("Navigation", page_choices, index=0)
         else:
-            # If not, display the survey and save the preferences
-            wine_preference_survey(user["localId"])
+            st.session_state.page = st.sidebar.selectbox("Navigation", page_choices, index=page_choices.index(st.session_state.page))
+        
+        user_data = get_user_data(user["localId"])
 
-    if user:
-        menu_options = ["Home", "Profile"]
-        selected_option = st.sidebar.selectbox("Choose an option", menu_options)
+        if st.session_state.page == "Home":
+            # Check if wine preferences are already saved
+            if user_data and 'red_wine' in user_data:
+                display_preferences(user_data)
+            else:
+                # If not, display the survey and save the preferences
+                if wine_preference_survey(user["localId"]):  # Checking the return value to refresh the page
+                    st.session_state.page = "Profile"  # If preferences were saved, navigate to profile
 
-        if selected_option == "Home":
-            # Your existing main page contents here
-            # (Basically everything that is currently in the main function, 
-            # minus the user check and the added sidebar selectbox)
-            pass
-        elif selected_option == "Profile":
+            if st.button("Start Tasting"):
+                start_tasting()
+
+        elif st.session_state.page == "Profile":
             profile_page(user["localId"])
 
-    if 'start_tasting' not in st.session_state:
-        st.session_state.start_tasting = False
+            # Check if wine preferences are already saved
+            if user_data and 'red_wine' in user_data:
+                display_preferences(user_data)
+            else:
+                # If not, display the survey and save the preferences
+                wine_preference_survey(user["localId"])
 
-    if st.button("Start Tasting"):
-        start_tasting()
+            if st.button("Start Tasting"):
+                start_tasting()
+
 
 def start_tasting():
-
-        if st.session_state.start_tasting:
-            wine_options = ["Red", "White", "Rosé", "Sparkling"]
-            selected_wine = st.selectbox("Choose a type of wine:", wine_options, key="wine_options_key")
-
-        # Visual Examination
-        st.subheader("Look")
-        appearance = st.text_input("Describe the wine's appearance:")
-        clarity = st.radio("Select the clarity:", ["Clear", "Cloudy", "Opaque"])
-        intensity_options = ["Pale", "Medium", "Deep"]
-        intensity = st.selectbox("Intensity:", intensity_options, key="intensity_options_key") 
-        hue_options = ["Purple", "Ruby", "Garnet", "Tawny", "Brown", "Straw", "Yellow", "Gold", "Amber", "Brown", "Pink", "Salmon", "Copper"]
-        hue = st.selectbox("Choose the Hue of the Wine:", hue_options, key="hue_options_key")
-
-        # Olfactory Examination
-        st.subheader("Olfactory Profile")
-        aroma_options = ["Fruity", "Floral", "Spicy", "Woody", "Earthy", "Citrus"]
-        selected_aromas = st.multiselect("Select the wine's aromas:", aroma_options)
-
-        # Gustatory Examination
-        st.subheader("Taste Profile")
-        tastes = ["Sweet", "Sour", "Salty", "Bitter"]
-        taste_intensity = {taste: st.slider(taste, 0, 10) for taste in tastes}
-
-        # Final Impressions
-        st.subheader("Final Impressions")
-        overall_impressions = st.text_area("Share your overall impressions of the wine:")
-        rating = st.slider("Rate the wine (out of 5):", 0, 5)
-
-        if st.button("Submit Tasting"):
-            st.write("Thank you for your tasting notes!")
     
-        buf = create_infographic(selected_wine, appearance, clarity, intensity, selected_aromas, taste_intensity, overall_impressions, rating)
-    
-        # Convert buffer to PIL Image for display
-        image = Image.open(buf)
-        st.image(image, caption="Your Wine Tasting Infographic", use_column_width=True)
-    
-        buf.seek(0)
-        st.download_button(label="Download Infographic", data=buf, file_name="wine_tasting_infographic.jpeg", mime="image/jpeg")
+    # Initialize session_state variables if not present
+    if 'selected_wine' not in st.session_state:
+        st.session_state.selected_wine = "Red"
+        st.session_state.appearance = ""
+        st.session_state.clarity = "Clear"
+        st.session_state.intensity = "Pale"  # Changed to default to "Pale"
+        st.session_state.hue = "Ruby"
+        st.session_state.selected_aromas = []
+        st.session_state.taste_intensity = {taste: 5 for taste in ["Sweet", "Sour", "Salty", "Bitter"]}  # Default to medium intensity (5)
+        st.session_state.overall_impressions = ""
+        st.session_state.rating = 3  # Remains as an integer value
 
+    wine_options = ["Red", "White", "Rosé", "Sparkling"]
+    st.session_state.selected_wine = st.selectbox("Choose a type of wine:", wine_options, index=wine_options.index(st.session_state.selected_wine))
+
+    # Visual Examination
+    st.subheader("Look")
+    st.session_state.appearance = st.text_input("Describe the wine's appearance:", value=st.session_state.appearance)
+    st.session_state.clarity = st.radio("Select the clarity:", ["Clear", "Cloudy", "Opaque"], index=["Clear", "Cloudy", "Opaque"].index(st.session_state.clarity))
+    
+    intensity_options = ["Pale", "Medium", "Deep"]
+    # If st.session_state.intensity is a string, get its index; else, use the integer value directly
+    intensity_index = intensity_options.index(st.session_state.intensity) if isinstance(st.session_state.intensity, str) else st.session_state.intensity - 1
+    st.session_state.intensity = st.selectbox("Intensity:", intensity_options, index=intensity_index)
+
+    hue_options = ["Purple", "Ruby", "Garnet", "Tawny", "Brown", "Straw", "Yellow", "Gold", "Amber", "Green"]
+    st.session_state.hue = st.selectbox("Hue:", hue_options, index=hue_options.index(st.session_state.hue))
+    
+    # Aroma Assessment
+    st.subheader("Sniff")
+    st.session_state.selected_aromas = st.multiselect("Select the aromas you identify:", ["Fruity", "Floral", "Spicy", "Nutty", "Chemical", "Pungent", "Waxed", "Woody", "Earth", "Herbal"], default=st.session_state.selected_aromas)
+    
+    # Taste Assessment
+    st.subheader("Sip")
+    for taste in ["Sweet", "Sour", "Salty", "Bitter"]:
+        st.session_state.taste_intensity[taste] = st.slider(f"How {taste.lower()} is the wine?", 0, 10, st.session_state.taste_intensity[taste])
+    
+    # Overall Impressions and Rating
+    st.session_state.overall_impressions = st.text_area("Describe your overall impressions:", value=st.session_state.overall_impressions)
+    st.session_state.rating = st.slider("Overall Rating (0-5):", 0, 5, st.session_state.rating)
+
+    
+    if st.button("Submit"):
+        # Process the tasting data (e.g., save to a database, display a summary, etc.)
+        st.success("Thank you for submitting your tasting notes!")
 
 if __name__ == "__main__":
     main()
